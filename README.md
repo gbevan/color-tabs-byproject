@@ -7,6 +7,14 @@ with [pull request](https://github.com/paulpflug/color-tabs/pull/25)
 applied and modified to color tabs by project root folder and optionally
 by subfolder levels within the project tree.
 
+## Edit per project rules
+Use menu Packages->Color Tabs by Project -> Edit to open the rules editor:
+```cson
+projects:
+  'your-project':
+    folderDepth: 1
+```
+
 ## Developing
 
 Run `npm install` in the package directory.

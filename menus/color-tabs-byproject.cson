@@ -1,0 +1,18 @@
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Color Tabs by Project'
+      'submenu': [
+        {
+          'label': 'Edit Colors'
+          'command': 'color-tabs-byproject:edit-colors'
+        },
+        {
+          'label': 'Edit Rules'
+          'command': 'color-tabs-byproject:edit-rules'
+        }
+      ]
+    ]
+  }
+]
