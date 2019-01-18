@@ -1,7 +1,7 @@
 {
   "name": "color-tabs-byproject",
   "main": "./lib/main",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Adds colors to tabs by project folder name (and optionally subfolders)",
   "keywords": [
     "tabs",
