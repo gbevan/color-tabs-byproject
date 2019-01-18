@@ -264,7 +264,6 @@ class ColorTabsByProject
           if te?.getPath?
             @color te.getPath(), false
 
-      log 'editColors:', @editColors
       @disposables.add atom.commands.add 'atom-workspace', 'color-tabs-byproject:edit-colors': => @editColors(cb)
       @disposables.add atom.commands.add 'atom-workspace', 'color-tabs-byproject:edit-rules': => @editRules(cb)
 

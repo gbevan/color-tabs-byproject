@@ -35,7 +35,8 @@ module.exports = new class Main
       default: "deterministic"
       enum: ["deterministic", "random"]
     folderDepth:
-      title: "Folder Depth to have own color in project"
+      title: "Folder Depth"
+      description: "Folder Depth to have own color in project (see Edit Rules for per-project rules)"
       type: "integer"
       default: "0"
     autoColor:
