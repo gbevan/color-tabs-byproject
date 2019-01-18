@@ -1,5 +1,6 @@
-Copyright (c) 2015 Paul Pflugradt
 Copyright (c) 2019 Graham Lee Bevan <graham.bevan@ntlworld.com>
+
+Copyright (c) 2015 Paul Pflugradt
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
