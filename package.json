@@ -1,0 +1,38 @@
+{
+  "name": "color-tabs-byproject",
+  "main": "./lib/main",
+  "version": "0.1.0",
+  "description": "Adds colors to tabs by project folder name (and optionally subfolders)",
+  "keywords": [
+    "tabs",
+    "color",
+    "project"
+  ],
+  "repository": "https://github.com/gbevan/color-tabs-byproject",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=0.174.0 <2.0.0"
+  },
+  "dependencies": {
+    "atom-simple-logger": "~0.0.1",
+    "season": "^5.3.0",
+    "hashbow": "1.1.1"
+  },
+  "dev-dependencies": {
+    "atom-package-reloader": "~0.0.2"
+  },
+  "providedServices": {
+    "color-change-cb": {
+      "description": "Is called on color change",
+      "versions": {
+        "0.0.1": "provideColorChangeCb"
+      }
+    },
+    "change-color": {
+      "description": "changes the color of a tab",
+      "versions": {
+        "0.0.1": "provideChangeColor"
+      }
+    }
+  }
+}
