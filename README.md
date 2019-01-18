@@ -2,6 +2,8 @@
 
 Adds colors to tabs by project folder name (and optionally subfolders).
 
+![Screenshot](docs/screenshot-1.png)
+
 Fork of original project [paulpflug/color-tabs](https://github.com/paulpflug/color-tabs)
 with [pull request](https://github.com/paulpflug/color-tabs/pull/25)
 applied and modified to color tabs by project root folder and optionally
