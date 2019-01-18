@@ -16,3 +16,15 @@ Open it in atom in dev mode or run `apm link`.
 For debugging set the debug field in package settings to the needed debug level.
 
 Should autoreload the package on changes in `lib` and `styles` folders
+
+### Release to Atom
+```bash
+# for a patch release
+apm publish patch
+
+# for a minor release
+apm publish minor
+
+# for a major release
+apm publish major
+```
