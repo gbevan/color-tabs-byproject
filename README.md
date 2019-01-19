@@ -10,7 +10,7 @@ applied and modified to color tabs by project root folder and optionally
 by subfolder levels within the project tree.
 
 ## Edit per project rules
-Use menu Packages->Color Tabs by Project -> Edit to open the rules editor:
+Use menu `Packages -> Color Tabs by Project -> Edit Rules` to open the rules editor:
 ```cson
 projects:
   'your-project':
