@@ -1,11 +1,9 @@
 sep = require("path").sep
 dirname = require("path").dirname
 basename = require("path").basename
-log = null
+debug = require('debug')('color-tabs-byproject')
 CSON = require 'season'
-colorFile = atom.getConfigDirPath()+"#{sep}color-tabs-byproject-colors.cson"
 rulesFile = atom.getConfigDirPath()+"#{sep}color-tabs-byproject-rules.cson"
-colors = {}
 rules = {}
 colorChangeCb = null
 cssElements = {}
@@ -113,8 +111,8 @@ getCssElement = (path, color) ->
         top: 0;
         border-style: solid;
         position: absolute;"
-
       marker: true
+
     switch marker
       when "corner"
         css = cssBuilder css,
@@ -134,40 +132,39 @@ getCssElement = (path, color) ->
             border-radius: 3px;"
           marker: true
   cssElement.appendChild document.createTextNode css
-
   return cssElement
-getRandomColor= ->
-  letters = '0123456789ABCDEF'.split('')
-  color = '#'
-  for i in [0..5]
-    color += letters[Math.floor(Math.random() * 16)]
-  return color
 
 getDeterministicColor= (path) ->
-  relPath = atom.project.relativizePath(path)[1]
-  projPath = path.replace(new RegExp("#{relPath}$"), "")
-
-  projName = basename projPath
+  projPath = path
 
   folderDepth = atom.config.get "color-tabs-byproject.folderDepth"
-  if rules && rules.projects && rules.projects[projName]
-    if rules.projects[projName].folderDepth
-      folderDepth = rules.projects[projName].folderDepth
+  if rules && rules.projects && rules.projects[projPath]
+    if rules.projects[projPath].folderDepth
+      folderDepth = rules.projects[projPath].folderDepth
 
   if folderDepth > 0
+    relPath = atom.project.relativizePath(projPath)[1]
     subPath = dirname(relPath).split(sep, folderDepth)
     projPath += subPath
   return hashbow(projPath)
 
-getColorForPath= (path, getSaved=false) ->
+getColorForPath = (path) ->
+  debug 'getColorForPath path:', path
   switch atom.config.get "color-tabs-byproject.colorSelection"
-    when 'random'
-      if getSaved && colors[path]
-        return colors[path]
-      else
-        return getRandomColor()
     when 'deterministic'
-      return getDeterministicColor(path)
+      projPath = resolveProjPath path
+      projName = basename projPath
+      debug 'getColorForPath: projPath:', projPath
+      if rules && rules.projects && rules.projects[projPath] && rules.projects[projPath].color
+        debug 'getColorForPath: rules.projects[projPath].color:', rules.projects[projPath].color
+        return rules.projects[projPath].color
+      else
+        return getDeterministicColor(projPath)
+
+resolveProjPath = (path) ->
+  relPath = atom.project.relativizePath(path)[1]
+  projPath = path.replace(new RegExp("#{relPath}$"), "")
+  return projPath
 
 processPath= (path,color,revert=false,save=false,warn=false) ->
   unless path?
@@ -177,11 +174,21 @@ processPath= (path,color,revert=false,save=false,warn=false) ->
   cssElement = getCssElement path, color
   unless revert
     if save
-      colors[path] = color
-      CSON.writeFile colorFile, colors, ->
-    tabDivs = atom.views.getView(atom.workspace).querySelectorAll "ul.tab-bar>
-      li.tab[data-type='TextEditor']>
-      div.title[data-path='#{path.replace(/\\/g,"\\\\")}']"
+      projPath = resolveProjPath path
+      if projPath != ""
+        if !rules.projects[projPath]
+          rules.projects[projPath] = {}
+        rules.projects[projPath].color = color
+        CSON.writeFile rulesFile, rules, (err) ->
+          if err
+            console.error 'ERROR: writing rules file:', err
+          else
+            debug 'Wrote rules file'
+
+    tabDivs = atom.views.getView(atom.workspace)
+      .querySelectorAll "ul.tab-bar>
+        li.tab[data-type='TextEditor']>
+        div.title[data-path='#{path.replace(/\\/g,"\\\\")}']"
     for tabDiv in tabDivs
       tabDiv.parentElement.setAttribute "data-path", path
       marker = tabDiv.querySelector ".marker"
@@ -194,8 +201,16 @@ processPath= (path,color,revert=false,save=false,warn=false) ->
       head.appendChild cssElement
   else
     if save
-      delete colors[path]
-      CSON.writeFile colorFile, colors, ->
+      projPath = resolveProjPath path
+      if projPath != ""
+        if rules.projects[projPath] && rules.projects[projPath].color
+          delete rules.projects[projPath].color
+        CSON.writeFile rulesFile, rules, (err) ->
+          if err
+            console.error 'ERROR: writing rules file:', err
+          else
+            debug 'Wrote rules file'
+
     if cssElement.parentElement?
       cssElement.parentElement.removeChild(cssElement)
   if colorChangeCb?
@@ -205,19 +220,33 @@ processPath= (path,color,revert=false,save=false,warn=false) ->
       else
         cb path, false
 
+loadRules = (next) ->
+  debug 'in loadRules'
+  CSON.readFile rulesFile, (err, content) =>
+    unless err
+      rules = content
+    if !rules
+      rules = {}
+    if !rules.projects
+      rules.projects = {}
+    debug 'rules loaded:', rules
+    next(err)
+
 processAllTabs= (revert=false)->
-  log "processing all tabs, reverting:#{revert}"
+  debug "processAllTabs, reverting:#{revert}"
   paths = []
   paneItems = atom.workspace.getPaneItems()
   for paneItem in paneItems
     if paneItem.getPath?
       path = paneItem.getPath()
-      if path? and paths.indexOf(path) == -1 and colors[path]?
+      debug 'processAllTabs panel path:', path
+      if paths? and paths.indexOf(path) == -1
         paths.push path
-  log "found #{paths.length} different paths with color of
-    total #{paneItems.length} paneItems",2
+  debug "found #{paths.length} different paths with color of
+    total #{paneItems.length} paneItems"
   for path in paths
-    processPath path, getColorForPath(path, getSaved=true), revert
+    debug 'calling processPath:', path
+    processPath path, getColorForPath(path), revert
   return !revert
 
 {CompositeDisposable} = require 'atom'
@@ -228,89 +257,83 @@ class ColorTabsByProject
   disposables: null
 
   constructor: (logger) ->
-    log = logger "core"
+    debug 'in constructor'
+    loadRules =>
+      @processed = processAllTabs()
+      debug 'processAllTabs called, processed:', @processed
 
-    CSON.readFile colorFile, (err, content) =>
-      unless err
-        colors = content
-        @processed = processAllTabs()
+      unless @disposables?
+        @disposables = new CompositeDisposable
+        cb = processAllTabs.bind(this)
+        @disposables.add atom.workspace.onDidAddTextEditor (event) ->
+          if atom.config.get("color-tabs-byproject.autoColor")
+            te = event.textEditor
+            if te?.getPath?
+              processPath te.getPath(), getColorForPath(te.getPath()), false, true
+          setTimeout processAllTabs, 10
+        @disposables.add atom.workspace.onDidDestroyPaneItem ->
+          setTimeout processAllTabs, 10
+        @disposables.add atom.commands.add 'atom-workspace',
+          'color-tabs-byproject:toggle': @toggle
+          'color-tabs-byproject:color-current-tab': =>
+            te = atom.workspace.getActiveTextEditor()
+            if te?.getPath?
+              @color te.getPath(), getColorForPath(te.getPath()), true, true
+            else
+              atom.notifications.addWarning "coloring is only possible for file tabs"
+          'color-tabs-byproject:uncolor-current-tab': =>
+            te = atom.workspace.getActiveTextEditor()
+            if te?.getPath?
+              @color te.getPath(), false
 
-    CSON.readFile rulesFile, (err, content) =>
-      unless err
-        rules = content
-        @processed = processAllTabs()
+        @disposables.add atom.commands.add 'atom-workspace', 'color-tabs-byproject:edit-rules': => @editRules(cb)
 
-    unless @disposables?
-      @disposables = new CompositeDisposable
-      cb = processAllTabs.bind(this)
-      @disposables.add atom.workspace.onDidAddTextEditor (event) ->
-        if atom.config.get("color-tabs-byproject.autoColor")
-          te = event.textEditor
-          if te?.getPath?
-            processPath te.getPath(), getColorForPath(te.getPath()), false, true
-        setTimeout processAllTabs, 10
-      @disposables.add atom.workspace.onDidDestroyPaneItem ->
-        setTimeout processAllTabs, 10
-      @disposables.add atom.commands.add 'atom-workspace',
-        'color-tabs-byproject:toggle': @toggle
-        'color-tabs-byproject:color-current-tab': =>
-          te = atom.workspace.getActiveTextEditor()
-          if te?.getPath?
-            @color te.getPath(), getColorForPath(te.getPath()), true, true
-          else
-            atom.notifications.addWarning "coloring is only possible for file tabs"
-        'color-tabs-byproject:uncolor-current-tab': =>
-          te = atom.workspace.getActiveTextEditor()
-          if te?.getPath?
-            @color te.getPath(), false
+        @disposables.add atom.config.observe("color-tabs-byproject.backgroundStyle",@repaint)
+        @disposables.add atom.config.observe("color-tabs-byproject.borderStyle",@repaint)
+        @disposables.add atom.config.observe("color-tabs-byproject.borderSize",@repaint)
+        @disposables.add atom.config.observe("color-tabs-byproject.markerStyle",@repaint)
+        @disposables.add atom.config.observe("color-tabs-byproject.colorSelection",@repaint)
 
-      @disposables.add atom.commands.add 'atom-workspace', 'color-tabs-byproject:edit-colors': => @editColors(cb)
-      @disposables.add atom.commands.add 'atom-workspace', 'color-tabs-byproject:edit-rules': => @editRules(cb)
+        atom.workspace.observeTextEditors (editor) =>
+          debug 'constructor getPath:', editor.getPath(), 'rulesFile:', rulesFile
+          if editor.getPath() == rulesFile
+            @addSaveCb(editor, cb)
+      debug "loaded"
 
-      @disposables.add atom.config.observe("color-tabs-byproject.backgroundStyle",@repaint)
-      @disposables.add atom.config.observe("color-tabs-byproject.borderStyle",@repaint)
-      @disposables.add atom.config.observe("color-tabs-byproject.borderSize",@repaint)
-      @disposables.add atom.config.observe("color-tabs-byproject.markerStyle",@repaint)
-      @disposables.add atom.config.observe("color-tabs-byproject.colorSelection",@repaint)
-
-      atom.workspace.observeTextEditors (editor) =>
-        if editor.getPath() == colorFile
-          @addSaveCb(editor, cb)
-    log "loaded"
   color: (path, color, save=true, warn=false) ->
     processPath path, color, !color, save, warn
+
   setColorChangeCb: (instance)->
     colorChangeCb = instance
-  getColors: ->
-    if @processed
-      return colors
-    else
-      return {}
+
   repaint: =>
+    debug 'in repaint'
     if @processed
       processAllTabs()
+
   toggle: =>
+    debug 'in toggle'
     @processed = processAllTabs(@processed)
+
   destroy: =>
+    debug 'in destroy'
     @processed = processAllTabs(true)
     @disposables?.dispose()
     @disposables = null
     sep = null
-    log = null
     CSON = null
 
   addSaveCb: (editor, cb) ->
+    debug 'in addSaveCb'
     @disposables.add editor.onDidSave =>
-      setTimeout cb, 10
-
-  editColors: (cb) =>
-    atom.open pathsToOpen: colorFile
-    atom.workspace.observeTextEditors (editor) =>
-      if editor.getPath() == colorFile
-        @addSaveCb(editor, cb)
+      debug('addSaveCb onDidSave called, reloading rules')
+      loadRules =>
+        setTimeout cb, 10
 
   editRules: (cb) =>
+    debug 'in editRules'
     atom.open pathsToOpen: rulesFile
     atom.workspace.observeTextEditors (editor) =>
+      debug 'editRules getPath:', editor.getPath(), 'rulesFile:', rulesFile
       if editor.getPath() == rulesFile
         @addSaveCb(editor, cb)

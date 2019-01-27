@@ -30,10 +30,10 @@ module.exports = new class Main
       enum: ["corner","round","square","none"]
     colorSelection:
       title: "Colors"
-      description: "With random, a random color is assigned every time you color a tab. With deterministic, the color is based on the path of the file, so each file has a specific and predictable color."
+      description: "Deterministic, the color is based on the path of the file, so each file has a specific and predictable color."
       type: "string"
       default: "deterministic"
-      enum: ["deterministic", "random"]
+      enum: ["deterministic"]
     folderDepth:
       title: "Folder Depth"
       description: "Folder Depth to have own color in project (see Edit Rules for per-project rules)"
