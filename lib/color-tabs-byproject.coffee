@@ -265,14 +265,26 @@ class ColorTabsByProject
       unless @disposables?
         @disposables = new CompositeDisposable
         cb = processAllTabs.bind(this)
+
+        @disposables.add atom.workspace.onDidAddPane (event) ->
+          debug 'in onDidAddPane event:', event
+          setTimeout processAllTabs, 10
+
+        @disposables.add atom.workspace.onDidDestroyPane (event) ->
+          debug 'in onDidDestroyPane event:', event
+          setTimeout processAllTabs, 10
+
         @disposables.add atom.workspace.onDidAddTextEditor (event) ->
+          debug 'onDidAddTextEditor event:', event
           if atom.config.get("color-tabs-byproject.autoColor")
             te = event.textEditor
             if te?.getPath?
               processPath te.getPath(), getColorForPath(te.getPath()), false, true
           setTimeout processAllTabs, 10
+
         @disposables.add atom.workspace.onDidDestroyPaneItem ->
           setTimeout processAllTabs, 10
+
         @disposables.add atom.commands.add 'atom-workspace',
           'color-tabs-byproject:toggle': @toggle
           'color-tabs-byproject:color-current-tab': =>
