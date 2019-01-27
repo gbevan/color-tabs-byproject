@@ -13,9 +13,12 @@ by subfolder levels within the project tree.
 Use menu `Packages -> Color Tabs by Project -> Edit Rules` to open the rules editor:
 ```cson
 projects:
-  'your-project':
+  "/your-project-path/":
     folderDepth: 1
+    color: "#980909"
 ```
+The hashed color is saved in the above project entry and can be overridden by
+Editting the above (e.g. using package color-picker).
 
 ## Developing
 
@@ -25,7 +28,11 @@ Open it in atom in dev mode or run `apm link`.
 
 For debugging set the debug field in package settings to the needed debug level.
 
-Should autoreload the package on changes in `lib` and `styles` folders
+Should autoreload the package on changes in `lib` and `styles` folders.
+
+```
+localStorage.debug = 'color-tabs-byproject'
+```
 
 ### Release to Atom
 ```bash
