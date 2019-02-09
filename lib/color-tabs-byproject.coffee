@@ -149,14 +149,14 @@ getDeterministicColor= (path) ->
   return hashbow(projPath)
 
 getColorForPath = (path) ->
-  debug 'getColorForPath path:', path
+  # debug 'getColorForPath path:', path
   switch atom.config.get "color-tabs-byproject.colorSelection"
     when 'deterministic'
       projPath = resolveProjPath path
       projName = basename projPath
-      debug 'getColorForPath: projPath:', projPath
+      # debug 'getColorForPath: projPath:', projPath
       if rules && rules.projects && rules.projects[projPath] && rules.projects[projPath].color
-        debug 'getColorForPath: rules.projects[projPath].color:', rules.projects[projPath].color
+        # debug 'getColorForPath: rules.projects[projPath].color:', rules.projects[projPath].color
         return rules.projects[projPath].color
       else
         return getDeterministicColor(projPath)
@@ -185,10 +185,12 @@ processPath= (path,color,revert=false,save=false,warn=false) ->
           else
             debug 'Wrote rules file'
 
+    # NOTE: Markdown previewer tabs cannot be colored this way.
     tabDivs = atom.views.getView(atom.workspace)
       .querySelectorAll "ul.tab-bar>
         li.tab[data-type='TextEditor']>
         div.title[data-path='#{path.replace(/\\/g,"\\\\")}']"
+
     for tabDiv in tabDivs
       tabDiv.parentElement.setAttribute "data-path", path
       marker = tabDiv.querySelector ".marker"
@@ -232,16 +234,19 @@ loadRules = (next) ->
     debug 'rules loaded:', rules
     next(err)
 
-processAllTabs= (revert=false)->
+processAllTabs = (revert=false)->
   debug "processAllTabs, reverting:#{revert}"
   paths = []
   paneItems = atom.workspace.getPaneItems()
   for paneItem in paneItems
+    debug 'processAllTabs class:', paneItem.constructor.name, 'paneItem:', paneItem
     if paneItem.getPath?
       path = paneItem.getPath()
       debug 'processAllTabs panel path:', path
       if paths? and paths.indexOf(path) == -1
         paths.push path
+    else
+      debug 'WARNING path not resolved for paneItem:', paneItem
   debug "found #{paths.length} different paths with color of
     total #{paneItems.length} paneItems"
   for path in paths
@@ -260,21 +265,47 @@ class ColorTabsByProject
     debug 'in constructor'
     loadRules =>
       @processed = processAllTabs()
-      debug 'processAllTabs called, processed:', @processed
+      debug 'after processAllTabs called, processed:', @processed
 
       unless @disposables?
         @disposables = new CompositeDisposable
         cb = processAllTabs.bind(this)
 
-        @disposables.add atom.workspace.onDidAddPane (event) ->
+        # Look for current Panes to add listeners
+        panes = atom.workspace.getPanes()
+        debug 'panes:', panes
+        for pane in panes
+          # process editor panes in center window
+          debug 'pane parent:', pane.parent
+          if pane.parent.location == 'center' || (pane.parent.parent && pane.parent.parent.location == 'center')
+            debug 'Adding onDidAddPane handler on initial (center) pane:', pane
+            @disposables.add pane.onDidAddItem (event) ->
+              debug 'initial pane onDidAddItem event:', event
+              setTimeout processAllTabs, 10
+
+        debug 'Adding onDidAddPane handler'
+        @disposables.add atom.workspace.onDidAddPane (event) =>
           debug 'in onDidAddPane event:', event
           setTimeout processAllTabs, 10
 
+          if event.pane
+            debug 'Adding onDidAddPane handler on new pane:', event.pane
+            @disposables.add event.pane.onDidAddItem (event) ->
+              debug 'pane onDidAddItem event:', event
+              setTimeout processAllTabs, 10
+
+        debug 'Adding onDidDestroyPane handler'
         @disposables.add atom.workspace.onDidDestroyPane (event) ->
           debug 'in onDidDestroyPane event:', event
           setTimeout processAllTabs, 10
 
+        @disposables.add atom.workspace.observePaneItems (item) ->
+          debug 'in observePaneItems item:', item
+          setTimeout processAllTabs, 10
+
+        debug 'Adding onDidAddTextEditor handler'
         @disposables.add atom.workspace.onDidAddTextEditor (event) ->
+          debug 'in onDidAddTextEditor:', event
           debug 'onDidAddTextEditor event:', event
           if atom.config.get("color-tabs-byproject.autoColor")
             te = event.textEditor
@@ -282,7 +313,12 @@ class ColorTabsByProject
               processPath te.getPath(), getColorForPath(te.getPath()), false, true
           setTimeout processAllTabs, 10
 
-        @disposables.add atom.workspace.onDidDestroyPaneItem ->
+        @disposables.add atom.workspace.onDidAddPaneItem (event) ->
+          debug 'in onDidAddPaneItem event:', event
+          setTimeout processAllTabs, 10
+
+        @disposables.add atom.workspace.onDidDestroyPaneItem (event)->
+          debug 'in onDidDestroyPaneItem event:', event
           setTimeout processAllTabs, 10
 
         @disposables.add atom.commands.add 'atom-workspace',
@@ -310,6 +346,7 @@ class ColorTabsByProject
           debug 'constructor getPath:', editor.getPath(), 'rulesFile:', rulesFile
           if editor.getPath() == rulesFile
             @addSaveCb(editor, cb)
+      # setTimeout processAllTabs, 1000
       debug "loaded"
 
   color: (path, color, save=true, warn=false) ->
