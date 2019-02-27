@@ -162,6 +162,8 @@ getColorForPath = (path) ->
         return getDeterministicColor(projPath)
 
 resolveProjPath = (path) ->
+  if !path
+    return ''
   relPath = atom.project.relativizePath(path)[1]
   projPath = path.replace(new RegExp("#{relPath}$"), "")
   return projPath
