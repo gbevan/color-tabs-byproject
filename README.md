@@ -10,15 +10,24 @@ applied and modified to color tabs by project root folder and optionally
 by subfolder levels within the project tree.
 
 ## Edit per project rules
-Use menu `Packages -> Color Tabs by Project -> Edit Rules` to open the rules editor:
+There are two ways of setting custom rules for your projects.
+Use menu `Packages -> Color Tabs by Project -> Edit Rules` to open the rules editor, then:
++ if `Custom rules based on` is set to `project path`
 ```cson
 projects:
   "/your-project-path/":
     folderDepth: 1
     color: "#980909"
 ```
++ if  `Custom rules based on` is set to `project name`
+```cson
+projects:
+  "your-project-name":
+    folderDepth: 1
+    color: "#980909"
+```
 The hashed color is saved in the above project entry and can be overridden by
-Editting the above (e.g. using package color-picker).
+Editing the above (e.g. using package color-picker).
 
 ## Developing
 
