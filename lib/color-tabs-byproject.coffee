@@ -149,17 +149,21 @@ getDeterministicColor= (path) ->
   return hashbow(projPath)
 
 getColorForPath = (path) ->
-  # debug 'getColorForPath path:', path
   switch atom.config.get "color-tabs-byproject.colorSelection"
     when 'deterministic'
       projPath = resolveProjPath path
       projName = basename projPath
-      # debug 'getColorForPath: projPath:', projPath
-      if rules && rules.projects && rules.projects[projPath] && rules.projects[projPath].color
-        # debug 'getColorForPath: rules.projects[projPath].color:', rules.projects[projPath].color
-        return rules.projects[projPath].color
-      else
-        return getDeterministicColor(projPath)
+      switch atom.config.get "color-tabs-byproject.referTo"
+        when 'project name'
+          if rules && rules.projects && rules.projects[projName] && rules.projects[projName].color
+            return rules.projects[projName].color
+          else
+            return getDeterministicColor(projName)
+        when 'project path'
+          if rules && rules.projects && rules.projects[projPath] && rules.projects[projPath].color
+           return rules.projects[projPath].color
+          else
+            return getDeterministicColor(projPath)
 
 resolveProjPath = (path) ->
   if !path
