@@ -165,7 +165,12 @@ resolveProjPath = (path) ->
   if !path
     return ''
   relPath = atom.project.relativizePath(path)[1]
-  projPath = path.replace(new RegExp("#{relPath}$"), "")
+  debug 'relPath:', relPath
+
+  regPath = relPath.replace(/\\/g, '\\\\')
+  debug 'regPath:', regPath
+  
+  projPath = path.replace(new RegExp("#{regPath}$"), "")
   return projPath
 
 processPath= (path,color,revert=false,save=false,warn=false) ->
