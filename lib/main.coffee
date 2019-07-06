@@ -38,7 +38,7 @@ module.exports = new class Main
       title: "Custom rules based on"
       description: "Set rules based on project name, or project full path"
       type: "string"
-      default: "project name"
+      default: "project path"
       enum: ["project name", "project path"]
     folderDepth:
       title: "Folder Depth"

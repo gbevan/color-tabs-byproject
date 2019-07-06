@@ -173,7 +173,7 @@ resolveProjPath = (path) ->
 
   regPath = relPath.replace(/\\/g, '\\\\')
   debug 'regPath:', regPath
-  
+
   projPath = path.replace(new RegExp("#{regPath}$"), "")
   return projPath
 
@@ -186,15 +186,30 @@ processPath= (path,color,revert=false,save=false,warn=false) ->
   unless revert
     if save
       projPath = resolveProjPath path
-      if projPath != ""
-        if !rules.projects[projPath]
-          rules.projects[projPath] = {}
-        rules.projects[projPath].color = color
-        CSON.writeFile rulesFile, rules, (err) ->
-          if err
-            console.error 'ERROR: writing rules file:', err
-          else
-            debug 'Wrote rules file'
+      projName = basename projPath
+
+      switch atom.config.get "color-tabs-byproject.referTo"
+        when 'project path'
+          if projPath != ""
+            if !rules.projects[projPath]
+              rules.projects[projPath] = {}
+            rules.projects[projPath].color = color
+            CSON.writeFile rulesFile, rules, (err) ->
+              if err
+                console.error 'ERROR: writing rules file:', err
+              else
+                debug 'Wrote projPath rules file'
+
+        when 'project name'
+          if projName != ""
+            if !rules.projects[projName]
+              rules.projects[projName] = {}
+            rules.projects[projName].color = color
+            CSON.writeFile rulesFile, rules, (err) ->
+              if err
+                console.error 'ERROR: writing rules file:', err
+              else
+                debug 'Wrote projName rules file'
 
     # NOTE: Markdown previewer tabs cannot be colored this way.
     tabDivs = atom.views.getView(atom.workspace)
@@ -215,14 +230,28 @@ processPath= (path,color,revert=false,save=false,warn=false) ->
   else
     if save
       projPath = resolveProjPath path
-      if projPath != ""
-        if rules.projects[projPath] && rules.projects[projPath].color
-          delete rules.projects[projPath].color
-        CSON.writeFile rulesFile, rules, (err) ->
-          if err
-            console.error 'ERROR: writing rules file:', err
-          else
-            debug 'Wrote rules file'
+      projName = basename projPath
+
+      switch atom.config.get "color-tabs-byproject.referTo"
+        when 'project path'
+          if projPath != ""
+            if rules.projects[projPath] && rules.projects[projPath].color
+              delete rules.projects[projPath].color
+            CSON.writeFile rulesFile, rules, (err) ->
+              if err
+                console.error 'ERROR: writing rules file:', err
+              else
+                debug '#2 Wrote projPath rules file'
+
+        when 'project name'
+          if projName != ""
+            if rules.projects[projName] && rules.projects[projName].color
+              delete rules.projects[projName].color
+            CSON.writeFile rulesFile, rules, (err) ->
+              if err
+                console.error 'ERROR: writing rules file:', err
+              else
+                debug '#2 Wrote projName rules file'
 
     if cssElement.parentElement?
       cssElement.parentElement.removeChild(cssElement)

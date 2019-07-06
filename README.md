@@ -16,14 +16,12 @@ Use menu `Packages -> Color Tabs by Project -> Edit Rules` to open the rules edi
 ```cson
 projects:
   "/your-project-path/":
-    folderDepth: 1
     color: "#980909"
 ```
 + if  `Custom rules based on` is set to `project name`
 ```cson
 projects:
   "your-project-name":
-    folderDepth: 1
     color: "#980909"
 ```
 The hashed color is saved in the above project entry and can be overridden by
