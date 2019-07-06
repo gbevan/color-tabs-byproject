@@ -34,6 +34,12 @@ module.exports = new class Main
       type: "string"
       default: "deterministic"
       enum: ["deterministic"]
+    referTo:
+      title: "Custom rules based on"
+      description: "Set rules based on project name, or project full path"
+      type: "string"
+      default: "project path"
+      enum: ["project name", "project path"]
     folderDepth:
       title: "Folder Depth"
       description: "Folder Depth to have own color in project (see Edit Rules for per-project rules)"
