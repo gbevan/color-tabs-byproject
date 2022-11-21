@@ -1,5 +1,7 @@
 # color-tabs-byproject package
 
+**2022-11-21 Project archived as no longer using Atom due to it being discontinued by GitHub...**
+
 Adds colors to tabs by project folder name (and optionally subfolders).
 
 ![Screenshot](docs/screenshot-1.png)
